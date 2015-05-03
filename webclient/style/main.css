@@ -1,0 +1,43 @@
+#content {
+    padding-top: 60px;
+}
+
+#error-msg {
+    padding-top: 60px;
+}
+
+#start-stop {
+    float: right;
+}
+
+#oven-status span {
+    font-size: 25px;
+    font-weight: bold;
+}
+
+#oven-status .value {
+    font-weight: normal;
+}
+
+#server-config .input-group {
+    display: inline-block;
+    width: 80%;
+}
+
+#temperature {
+    padding-top: 0;
+    margin-top: 7px;
+}
+
+#temp-history-container {
+    height: 80vh;
+}
+
+#config {
+    padding-top: 0;
+}
+
+#apply-settings {
+    float: right;
+    margin-top: 10px;
+}

@@ -1,0 +1,16 @@
+{
+  "name": "reflow-server",
+  "version": "1.0.0",
+  "description": "Connects to the reflow oven and exposes a super basic API for controlling it",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Lukas Lao Beyer",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.12.3",
+    "express": "^4.12.3",
+    "serialport": "^1.6.3"
+  }
+}
