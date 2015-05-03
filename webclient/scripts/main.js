@@ -72,7 +72,7 @@ $(document).ready(function() {
                     $('#stop-reflow').addClass('disabled');
                 }
 
-                if(time % 5000 == 0)
+                if(time % 2500 == 0)
                 {
                     temp_history.addData([data.temperature], time/1000);
                     if(time > 300 * 1000)

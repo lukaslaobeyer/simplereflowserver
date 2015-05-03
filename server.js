@@ -1,5 +1,5 @@
 // Constants
-var ovenVendorId = '0x1f00';
+var ovenVendorId = '0x1f01';
 var ovenProductId = '0x2012';
 
 // Oven status
