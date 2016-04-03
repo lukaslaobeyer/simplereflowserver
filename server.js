@@ -84,13 +84,16 @@ app.post('/setpoints', function(req, res) {
 // Parsers
 function parseTemperature(dataline) {
     var index = 0;
+    var temp = -1.0;
     if((index = dataline.indexOf('Waiting  - ')) >= 0) {
-        return parseFloat(dataline.substr(index + 11, index + 17));
+        temp = parseFloat(dataline.substr(index + 11, index + 17));
     } else if((index = dataline.indexOf('CURR ')) >= 0) {
-        return parseFloat(dataline.substr(index + 5, index + 11));
+        temp = parseFloat(dataline.substr(index + 5, index + 11));
     }
 
-    return -1.0;
+    console.log("Temp = " + temp + "\u00B0C");
+
+    return temp;
 }
 
 function parseSetpoint(dataline) {
