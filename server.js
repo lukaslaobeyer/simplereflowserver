@@ -1,6 +1,8 @@
 // Constants
 var ovenVendorId = '0x1f01';
 var ovenProductId = '0x2012';
+var ovenPnpVendorId = '1f01';  // for Windows
+var ovenPnpProductId = '2012'; // for Windows
 
 // Oven status
 var connected = false;
@@ -133,9 +135,9 @@ function parseOvenPhase(dataline) {
 // Find the connected reflow oven, connect to it, and start updating the global status variables
 serialport.list(function (err, ports) {
     ports.forEach(function(port) {
-        if(port.vendorId == ovenVendorId && port.productId == ovenProductId) {
+        if((port.vendorId.toLowerCase() == ovenVendorId && port.productId.toLowerCase() == ovenProductId) || (port.pnpId.toLowerCase().indexOf(ovenPnpVendorId) >= 0 && port.pnpId.toLowerCase().indexOf(ovenPnpProductId) >= 0)) {
             var oven = new serialport.SerialPort(port.comName);
-
+			
             oven.on('open', function() {
                 connected = true;
                 console.log('Connected to reflow oven at %s', port.comName);
