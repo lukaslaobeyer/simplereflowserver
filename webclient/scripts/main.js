@@ -1,6 +1,4 @@
 $(document).ready(function() {
-    submitsettings();
-
     // Temp. history chart
     var canvas = document.getElementById("temp-history");
     // Make it visually fill the positioned parent
@@ -14,31 +12,51 @@ $(document).ready(function() {
         datasets: [
             {
                 label: "Temperature",
-                fillColor: "rgba(151,187,205,0.2)",
-                strokeColor: "rgba(151,187,205,1)",
-                pointColor: "rgba(151,187,205,1)",
-                pointStrokeColor: "#fff",
-                pointHighlightFill: "#fff",
-                pointHighlightStroke: "rgba(151,187,205,1)",
+                fill: false,
+                borderColor: "rgba(200,56,56,1)",
+                pointRadius: 0,
+                lineTension: 0,
+                data: []
+            },
+            {
+                label: "Preset",
+                fill: true,
+                borderColor: "rgba(15,150,200,1)",
+                lineTension: 0,
                 data: []
             }
         ]
     };
 
     var chart_ctx = canvas.getContext("2d");
-    var temp_history = new Chart(chart_ctx).Line(temp_data, {
-        bezierCurve: false,
-        pointDot : false,
-        pointHitDetectionRadius : 2,
-        scaleShowVerticalLines: false,
-        scaleOverride: true,
-        scaleStartValue: 0,
-        scaleStepWidth: 25,
-        scaleSteps: 10
+    var temp_history = new Chart(chart_ctx, {
+        type: 'line',
+        data: temp_data,
+        options: {
+            scales: {
+                xAxes: [{
+                    type: 'linear',
+                    position: 'bottom',
+                    ticks: {
+                        stepSize: 15,
+                        min: 0,
+                        max: 300
+                    }
+                }],
+                yAxes: [{
+                    ticks: {
+                        stepSize: 25,
+                        min: 0,
+                        max: 260
+                    }
+                }]
+            }
+        }
     });
 
     // Status updater
     var time = 0;
+    var time_since_start = 0;
     var interval = 500;
 
     (function worker() {
@@ -74,16 +92,21 @@ $(document).ready(function() {
 
                 if(time % 2500 == 0)
                 {
-                    temp_history.addData([data.temperature], time/1000);
-                    if(time > 300 * 1000)
+                    if(data.phase != 'Ready' || data.phase == 'Cooldown')
                     {
-                        temp_history.removeData();
+                        temp_history.data.datasets[0].data.push({x: time_since_start / 1000, y: data.temperature});
+                        temp_history.update();
+                    }
+                    else
+                    {
+                        time_since_start = 0;
                     }
                 }
             },
             complete: function() {
                 // Schedule the next request
                 time += interval;
+                time_since_start += interval;
                 setTimeout(worker, interval);
             }
         });
@@ -98,6 +121,9 @@ $(document).ready(function() {
             contentType: 'application/json; charset=utf-8',
             dataType: 'json'
         });
+
+        temp_history.data.datasets[0].data = [];
+        temp_history.update();
     });
 
     $('#stop-reflow').click(function() {
@@ -127,16 +153,9 @@ $(document).ready(function() {
         var preheat_setpoint = 0.0;
         var soak_setpoint = 0.0;
         var reflow_setpoint = 0.0;
-
-        var preheat_kp = 0.0;
-        var preheat_ki = 0.0;
-        var preheat_kd = 0.0;
-        var soak_kp = 0.0;
-        var soak_ki = 0.0;
-        var soak_kd = 0.0;
-        var reflow_kp = 0.0;
-        var reflow_ki = 0.0;
-        var reflow_kd = 0.0;
+        var preheat_duration = 0.0;
+        var soak_duration = 0.0;
+        var reflow_duration = 0.0;
 
         var invalid = false;
 
@@ -144,17 +163,9 @@ $(document).ready(function() {
         if((soak_setpoint = validate($("#setpoint-soak").val())) < 0) { invalid = true; }
         if((reflow_setpoint = validate($("#setpoint-reflow").val())) < 0) { invalid = true; }
 
-        if((preheat_kp = validate($("#pid-preheat-kp").val())) < 0) { invalid = true; }
-        if((preheat_ki = validate($("#pid-preheat-ki").val())) < 0) { invalid = true; }
-        if((preheat_kd = validate($("#pid-preheat-kd").val())) < 0) { invalid = true; }
-
-        if((soak_kp = validate($("#pid-soak-kp").val())) < 0) { invalid = true; }
-        if((soak_ki = validate($("#pid-soak-ki").val())) < 0) { invalid = true; }
-        if((soak_kd = validate($("#pid-soak-kd").val())) < 0) { invalid = true; }
-
-        if((reflow_kp = validate($("#pid-reflow-kp").val())) < 0) { invalid = true; }
-        if((reflow_ki = validate($("#pid-reflow-ki").val())) < 0) { invalid = true; }
-        if((reflow_kd = validate($("#pid-reflow-kd").val())) < 0) { invalid = true; }
+        if((preheat_duration = validate($("#duration-preheat").val())) < 0) { invalid = true; }
+        if((soak_duration = validate($("#duration-soak").val())) < 0) { invalid = true; }
+        if((reflow_duration = validate($("#duration-reflow").val())) < 0) { invalid = true; }
 
         if(invalid)
         {
@@ -162,38 +173,35 @@ $(document).ready(function() {
             return;
         }
 
-        $.ajax({
-            type: 'POST',
-            url: '/pid',
-            data: '{\
-                "preheat": {\
-                    "kp": ' + preheat_kp +',\
-                    "ki": ' + preheat_ki +',\
-                    "kd": ' + preheat_kd +'\
-                },\
-                "soak": {\
-                    "kp": ' + soak_kp +',\
-                    "ki": ' + soak_ki +',\
-                    "kd": ' + soak_kd +'\
-                },\
-                "reflow": {\
-                    "kp": ' + reflow_kp +',\
-                    "ki": ' + reflow_ki +',\
-                    "kd": ' + reflow_kd +'\
-                }\
-            }',
-            contentType: 'application/json; charset=utf-8',
-            dataType: 'json'
-        });
+        temp_history.data.datasets[1].data = [
+            {x: 0, y: 25},
+            {x: preheat_duration, y: preheat_setpoint},
+            {x: preheat_duration + soak_duration, y: soak_setpoint},
+            {x: preheat_duration + soak_duration + reflow_duration, y: reflow_setpoint},
+            {x: 300, y: 100}
+        ];
+
+        temp_history.update();
+
+        var setpoints = {
+            preheat: {
+                setpoint: preheat_setpoint,
+                duration: preheat_duration
+            },
+            soak: {
+                setpoint: soak_setpoint,
+                duration: soak_duration
+            },
+            reflow: {
+                setpoint: reflow_setpoint,
+                duration: reflow_duration
+            }
+        };
 
         $.ajax({
             type: 'POST',
             url: '/setpoints',
-            data: '{\
-                "preheat": ' + preheat_setpoint + ',\
-                "soak": ' + soak_setpoint + ',\
-                "reflow": ' + reflow_setpoint + '\
-            }',
+            data: JSON.stringify(setpoints),
             contentType: 'application/json; charset=utf-8',
             dataType: 'json'
         });
@@ -202,4 +210,6 @@ $(document).ready(function() {
     $('#apply-settings').click(function() {
         submitsettings();
     });
+
+    submitsettings();
 });

@@ -28,6 +28,14 @@ var reflow_kp = 0.0;
 var reflow_ki = 0.0;
 var reflow_kd = 0.0;
 
+// Setpoints
+var preheat_setpoint = 0.0;
+var preheat_duration = 0.0;
+var soak_setpoint = 0.0;
+var soak_duration = 0.0;
+var reflow_setpoint = 0.0;
+var reflow_duration = 0.0;
+
 // Initialize libraries
 var express = require('express');
 var app = express();
@@ -74,9 +82,13 @@ app.post('/pid', function(req, res) {
 });
 
 app.post('/setpoints', function(req, res) {
-    preheat_setpoint = req.body.preheat;
-    soak_setpoint = req.body.soak;
-    reflow_setpoint = req.body.reflow;
+    preheat_setpoint = req.body.preheat.setpoint;
+    soak_setpoint = req.body.soak.setpoint;
+    reflow_setpoint = req.body.reflow.setpoint;
+
+    preheat_duration = req.body.preheat.duration;
+    soak_duration = req.body.soak.duration;
+    reflow_duration = req.body.reflow.duration;
 
     oven_setpoint_cmd = true;
 
@@ -108,11 +120,7 @@ function parseSetpoint(dataline) {
 }
 
 function parseOvenOn(dataline) {
-    if(dataline.indexOf("OVEN ON") >= 0) {
-        return true;
-    }
-
-    return false;
+    return dataline.indexOf("OVEN ON") >= 0;
 }
 
 function parseOvenPhase(dataline) {
@@ -121,6 +129,9 @@ function parseOvenPhase(dataline) {
     }
     else if(dataline.indexOf("SOAK") >= 0) {
         return 'Soak';
+    }
+    else if(dataline.indexOf("REFLOW") >= 0) {
+        return 'Reflow';
     }
     else if(dataline.indexOf("COOLDOWN") >= 0) {
         return 'Cooldown';
@@ -189,6 +200,10 @@ serialport.list(function (err, ports) {
                                     oven.write('setp: p ' + preheat_setpoint + '\r');
                                     oven.write('setp: s ' + soak_setpoint + '\r');
                                     oven.write('setp: r ' + reflow_setpoint + '\r');
+
+                                    oven.write('dur: p ' + preheat_duration + '\r');
+                                    oven.write('dur: s ' + soak_duration + '\r');
+                                    oven.write('dur: r ' + reflow_duration + '\r');
 
                                     oven_setpoint_cmd = false;
                                 }
